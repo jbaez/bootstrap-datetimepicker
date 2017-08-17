@@ -33,6 +33,64 @@
 /*global require:false */
 /*global jQuery:false */
 /*global moment:false */
+
+// TODO: some polyfills for unsuported JS methods in IE < 9. Could be converted to use jQuery equivalents
+if (!Array.prototype.reduce) {
+    Array.prototype.reduce = function(callback /*, initialValue*/) {
+        'use strict';
+        if (this == null) {
+            throw new TypeError('Array.prototype.reduce called on null or undefined');
+        }
+        if (typeof callback !== 'function') {
+            throw new TypeError(callback + ' is not a function');
+        }
+        var t = Object(this), len = t.length >>> 0, k = 0, value;
+        if (arguments.length == 2) {
+            value = arguments[1];
+        } else {
+            while (k < len && !(k in t)) {
+                k++;
+            }
+            if (k >= len) {
+                throw new TypeError('Reduce of empty array with no initial value');
+            }
+            value = t[k++];
+        }
+        for (; k < len; k++) {
+            if (k in t) {
+                value = callback(value, t[k], k, t);
+            }
+        }
+        return value;
+    };
+}
+
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(elt /*, from*/)
+    {
+        var len = this.length >>> 0;
+
+        var from = Number(arguments[1]) || 0;
+        from = (from < 0) ? Math.ceil(from) : Math.floor(from);
+        if (from < 0) {
+            from += len;
+        }
+
+        for (; from < len; from++) {
+            if (from in this && this[from] === elt) {
+                return from;
+            }
+        }
+        return -1;
+    };
+}
+
+if(typeof String.prototype.trim !== 'function') {
+    String.prototype.trim = function() {
+        return this.replace(/^\s+|\s+$/g, '');
+    };
+}
+
 (function (factory) {
     'use strict';
     if (typeof define === 'function' && define.amd) {
@@ -1332,14 +1390,22 @@
                 return false;
             },
 
+            handleDocumentClick = function(e) {
+                var parentElement = $(e.target).closest('.input-group');
+                if (!parentElement.length || parentElement[0] != element[0]) {
+                    hide(); // click was outside the datetimepicker
+                }
+            },
+
             attachDatePickerElementEvents = function () {
                 input.on({
                     'change': change,
-                    'blur': options.debug ? '' : hide,
                     'keydown': keydown,
                     'keyup': keyup,
                     'focus': options.allowInputToggle ? show : ''
                 });
+
+                $(document).on('click', handleDocumentClick);
 
                 if (element.is('input')) {
                     input.on({
@@ -1354,11 +1420,12 @@
             detachDatePickerElementEvents = function () {
                 input.off({
                     'change': change,
-                    'blur': blur,
                     'keydown': keydown,
                     'keyup': keyup,
                     'focus': options.allowInputToggle ? hide : ''
                 });
+
+                $(document).off('click', handleDocumentClick);
 
                 if (element.is('input')) {
                     input.off({
