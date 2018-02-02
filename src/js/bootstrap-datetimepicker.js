@@ -972,6 +972,7 @@ if(typeof String.prototype.trim !== 'function') {
             hide = function () {
                 var transitioning = false;
                 if (!widget) {
+                    setValue(parseInputDate(input.val().trim())); // if no widget, then typing on the input. Set value.
                     return picker;
                 }
                 // Ignore event if in the middle of a picker transition
